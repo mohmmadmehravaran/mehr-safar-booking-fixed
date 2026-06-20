@@ -164,16 +164,17 @@ export default function Header() {
 }
 
 function NavLink({ to, active, scrolled, children, hash }: { to: string; active: boolean; scrolled: boolean; children: React.ReactNode; hash?: string }) {
+  const { theme } = useTheme();
   return (
     <Link
       to={hash ? `${to}${hash}` : to}
       className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-        active
-          ? 'bg-emerald-50 text-emerald-700'
-          : scrolled
-          ? 'text-gray-700 hover:bg-gray-100'
-          : 'text-gray-700 hover:bg-gray-100'
+        active ? '' : 'text-gray-700 hover:bg-gray-100'
       }`}
+      style={active ? {
+        backgroundColor: theme.colors.navActiveBg || '#dbeafe',
+        color: theme.colors.navActiveText || '#2563eb',
+      } : undefined}
     >
       {children}
     </Link>
