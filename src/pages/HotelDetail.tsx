@@ -52,6 +52,7 @@ export default function HotelDetail() {
   const [bookingForm, setBookingForm] = useState({ name: '', phone: '', email: '' });
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [activeImage, setActiveImage] = useState(0);
 
   useEffect(() => {
     setCheckIn(filters.checkIn || '');
@@ -142,8 +143,34 @@ export default function HotelDetail() {
     <div className="min-h-screen pb-12" style={{ backgroundColor: theme.colors.bodyBg }}>
       {/* Image Header */}
       <div className="relative h-80 md:h-[500px] overflow-hidden">
-        <img src={hotel.images[0]} alt={hotel.name} className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+        {(() => {
+          const gallery = hotel.images && hotel.images.length ? hotel.images : [''];
+          const current = Math.min(activeImage, gallery.length - 1);
+          return (
+            <>
+              <img src={gallery[current]} alt={hotel.name} className="w-full h-full object-cover transition-all duration-300" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+
+              {/* Gallery thumbnails (only when more than one image) */}
+              {gallery.length > 1 && (
+                <div className="absolute top-6 left-6 z-10 flex gap-2 max-w-[55%] overflow-x-auto pb-1">
+                  {gallery.map((img, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setActiveImage(idx)}
+                      aria-label={`تصویر ${idx + 1}`}
+                      className={`flex-shrink-0 w-14 h-14 md:w-16 md:h-16 rounded-xl overflow-hidden border-2 transition-all ${
+                        current === idx ? 'border-white scale-105' : 'border-white/30 opacity-70 hover:opacity-100'
+                      }`}
+                    >
+                      <img src={img} alt="" className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
+          );
+        })()}
         
         {/* Back button */}
         <button
