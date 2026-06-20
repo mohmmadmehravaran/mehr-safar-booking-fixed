@@ -9,23 +9,28 @@ const isExternal = (to: string) => /^https?:\/\//i.test(to) || to.startsWith('ma
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
+  const [activeSection, setActiveSection] = useState<'home' | 'hotels'>('home');
   const { isAdmin, logoutAdmin, adminName, currentUser, logoutUser } = useApp();
   const { theme } = useTheme();
   const { headerLinks } = useSiteEdits();
   const location = useLocation();
   const navigate = useNavigate();
-  const [hotelsActive, setHotelsActive] = useState(false);
 
-  const goHome = () => {
+  const onHome = location.pathname === '/';
+
+  const goToHome = () => {
+    setActiveSection('home');
+    const scrollTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
     if (location.pathname !== '/') {
       navigate('/');
-      setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
+      setTimeout(scrollTop, 300);
     } else {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollTop();
     }
   };
 
   const goToHotels = () => {
+    setActiveSection('hotels');
     const scroll = () => document.getElementById('hotels')?.scrollIntoView({ behavior: 'smooth' });
     if (location.pathname !== '/') {
       navigate('/');
@@ -35,22 +40,24 @@ export default function Header() {
     }
   };
 
+  // Scroll spy: keep the active nav button (home / hotels) in sync with the
+  // section the user is currently looking at while on the home page.
   useEffect(() => {
     const onScroll = () => {
       setScrolled(window.scrollY > 20);
-      const el = document.getElementById('hotels');
-      if (el && location.pathname === '/') {
-        const r = el.getBoundingClientRect();
-        // Hotels link is "active" while the hotels section occupies the viewport.
-        setHotelsActive(r.top <= 140 && r.bottom >= 220);
-      } else {
-        setHotelsActive(false);
+      if (location.pathname !== '/') return;
+      const hotelsEl = document.getElementById('hotels');
+      if (!hotelsEl) {
+        setActiveSection('home');
+        return;
       }
+      const threshold = (typeof theme.sizes.headerHeight === 'number' ? theme.sizes.headerHeight : 64) + 40;
+      setActiveSection(hotelsEl.getBoundingClientRect().top <= threshold ? 'hotels' : 'home');
     };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
-  }, [location.pathname]);
+  }, [location.pathname, theme.sizes.headerHeight]);
 
   return (
     <header
@@ -87,30 +94,12 @@ export default function Header() {
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-1">
-            <button
-              onClick={goHome}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 cursor-pointer ${
-                location.pathname === '/' && !hotelsActive ? '' : 'text-gray-700 hover:bg-gray-100'
-              }`}
-              style={location.pathname === '/' && !hotelsActive ? {
-                backgroundColor: theme.colors.navActiveBg || '#dbeafe',
-                color: theme.colors.navActiveText || '#2563eb',
-              } : undefined}
-            >
+            <NavButton onClick={goToHome} active={onHome && activeSection === 'home'}>
               خانه
-            </button>
-            <button
-              onClick={goToHotels}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 cursor-pointer ${
-                location.pathname === '/' && hotelsActive ? '' : 'text-gray-700 hover:bg-gray-100'
-              }`}
-              style={location.pathname === '/' && hotelsActive ? {
-                backgroundColor: theme.colors.navActiveBg || '#dbeafe',
-                color: theme.colors.navActiveText || '#2563eb',
-              } : undefined}
-            >
+            </NavButton>
+            <NavButton onClick={goToHotels} active={onHome && activeSection === 'hotels'}>
               هتل‌ها
-            </button>
+            </NavButton>
             {isAdmin && (
               <NavLink to="/admin" active={location.pathname === '/admin'} scrolled={scrolled}>
                 پنل مدیریت
@@ -196,6 +185,24 @@ export default function Header() {
         </div>
       </div>
     </header>
+  );
+}
+
+function NavButton({ onClick, active, children }: { onClick: () => void; active: boolean; children: React.ReactNode }) {
+  const { theme } = useTheme();
+  return (
+    <button
+      onClick={onClick}
+      className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 cursor-pointer ${
+        active ? '' : 'text-gray-700 hover:bg-gray-100'
+      }`}
+      style={active ? {
+        backgroundColor: theme.colors.navActiveBg || '#dbeafe',
+        color: theme.colors.navActiveText || '#2563eb',
+      } : undefined}
+    >
+      {children}
+    </button>
   );
 }
 
