@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Wifi, Car, UtensilsCrossed, Dumbbell, Waves, Coffee, ArrowLeft } from 'lucide-react';
+import { MapPin, Wifi, Car, UtensilsCrossed, Dumbbell, Waves, Coffee, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Hotel } from '../types';
 import StarRating from './StarRating';
 import ReviewBadge from './ReviewBadge';
@@ -25,6 +26,26 @@ interface HotelCardProps {
 export default function HotelCard({ hotel, index = 0 }: HotelCardProps) {
   const { theme } = useTheme();
 
+  // Image carousel ("ورق زدن") — flip through the hotel's photos on the card itself.
+  const images = hotel.images && hotel.images.length ? hotel.images : [''];
+  const [current, setCurrent] = useState(0);
+  const safeCurrent = Math.min(current, images.length - 1);
+
+  const go = (e: React.MouseEvent, dir: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrent((c) => {
+      const len = images.length;
+      return (Math.min(c, len - 1) + dir + len) % len;
+    });
+  };
+
+  const select = (e: React.MouseEvent, i: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrent(i);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -40,18 +61,60 @@ export default function HotelCard({ hotel, index = 0 }: HotelCardProps) {
       whileHover={{ y: -6 }}
     >
       <Link to={`/hotel/${hotel.id}`} className="block">
-        {/* Image */}
+        {/* Image carousel */}
         <div className="relative overflow-hidden" style={{ height: theme.sizes.cardImageHeight }}>
-          <img
-            src={hotel.images[0]}
-            alt={`تصویر ${hotel.name} در ${hotel.city}`}
-            loading="lazy"
-            decoding="async"
-            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-          />
-          
+          {images.map((img, i) => (
+            <img
+              key={i}
+              src={img}
+              alt={`تصویر ${i + 1} ${hotel.name} در ${hotel.city}`}
+              loading="lazy"
+              decoding="async"
+              className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 ease-out group-hover:scale-110 ${
+                i === safeCurrent ? 'opacity-100' : 'opacity-0'
+              }`}
+            />
+          ))}
+
           {/* Gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent pointer-events-none" />
+
+          {/* Carousel controls (only with more than one image) */}
+          {images.length > 1 && (
+            <>
+              <button
+                type="button"
+                aria-label="تصویر بعدی"
+                onClick={(e) => go(e, 1)}
+                className="absolute top-1/2 left-2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/85 backdrop-blur-md shadow-lg flex items-center justify-center text-gray-700 opacity-0 group-hover:opacity-100 hover:bg-white transition-all z-10"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                type="button"
+                aria-label="تصویر قبلی"
+                onClick={(e) => go(e, -1)}
+                className="absolute top-1/2 right-2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/85 backdrop-blur-md shadow-lg flex items-center justify-center text-gray-700 opacity-0 group-hover:opacity-100 hover:bg-white transition-all z-10"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+
+              {/* Dots */}
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-10">
+                {images.map((_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    aria-label={`رفتن به تصویر ${i + 1}`}
+                    onClick={(e) => select(e, i)}
+                    className={`rounded-full transition-all ${
+                      i === safeCurrent ? 'w-5 h-2 bg-white' : 'w-2 h-2 bg-white/60 hover:bg-white/90'
+                    }`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
 
           {/* Type badge */}
           <div className="absolute top-3 right-3">
