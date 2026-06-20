@@ -14,6 +14,16 @@ export default function Header() {
   const { headerLinks } = useSiteEdits();
   const location = useLocation();
   const navigate = useNavigate();
+  const [hotelsActive, setHotelsActive] = useState(false);
+
+  const goHome = () => {
+    if (location.pathname !== '/') {
+      navigate('/');
+      setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
   const goToHotels = () => {
     const scroll = () => document.getElementById('hotels')?.scrollIntoView({ behavior: 'smooth' });
@@ -26,10 +36,21 @@ export default function Header() {
   };
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
+    const onScroll = () => {
+      setScrolled(window.scrollY > 20);
+      const el = document.getElementById('hotels');
+      if (el && location.pathname === '/') {
+        const r = el.getBoundingClientRect();
+        // Hotels link is "active" while the hotels section occupies the viewport.
+        setHotelsActive(r.top <= 140 && r.bottom >= 220);
+      } else {
+        setHotelsActive(false);
+      }
+    };
+    onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+  }, [location.pathname]);
 
   return (
     <header
@@ -66,12 +87,27 @@ export default function Header() {
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-1">
-            <NavLink to="/" active={location.pathname === '/'} scrolled={scrolled}>
+            <button
+              onClick={goHome}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 cursor-pointer ${
+                location.pathname === '/' && !hotelsActive ? '' : 'text-gray-700 hover:bg-gray-100'
+              }`}
+              style={location.pathname === '/' && !hotelsActive ? {
+                backgroundColor: theme.colors.navActiveBg || '#dbeafe',
+                color: theme.colors.navActiveText || '#2563eb',
+              } : undefined}
+            >
               خانه
-            </NavLink>
+            </button>
             <button
               onClick={goToHotels}
-              className="px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 text-gray-700 hover:bg-gray-100 cursor-pointer"
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 cursor-pointer ${
+                location.pathname === '/' && hotelsActive ? '' : 'text-gray-700 hover:bg-gray-100'
+              }`}
+              style={location.pathname === '/' && hotelsActive ? {
+                backgroundColor: theme.colors.navActiveBg || '#dbeafe',
+                color: theme.colors.navActiveText || '#2563eb',
+              } : undefined}
             >
               هتل‌ها
             </button>
